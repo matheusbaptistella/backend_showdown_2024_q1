@@ -6,6 +6,15 @@ use axum::{
 };
 use sqlx::PgPool;
 
+/// Add a transaction to the database and update the client's limit/balance.
+///
+/// ## Arguments
+/// * `Extension(cnn)` - dependency injected by Axum from the database layer.
+/// * `Path(id)` - the client id, parsed by Axum from the url path.
+/// * `Json(txn)` - the transaction, parsed by Axum from the json body.
+///
+/// ## Returns
+/// * 
 pub async fn add_transaction(
     Extension(cnn): Extension<PgPool>,
     Path(id): Path<i32>,
@@ -30,11 +39,20 @@ pub async fn add_transaction(
     }
 }
 
-pub async fn get_balance(
+/// Get the bank statement of a client (the 10 latest transactions).
+///
+/// ## Arguments
+/// * `Extension(cnn)` - dependency injected by Axum from the database layer.
+/// * `Path(id)` - the client id, parsed by Axum from the url path.
+///
+/// ## Returns
+/// * A Json containing the latest 10 transactions, or a status code related to
+/// the error.
+pub async fn get_bank_statement(
     Extension(cnn): Extension<PgPool>,
     Path(id): Path<i32>,
 ) -> Result<Json<Vec<Transaction>>, StatusCode> {
-    match crate::db::get_balance(&cnn, id).await {
+    match crate::db::get_bank_statement(&cnn, id).await {
         Ok(transactions) => Ok(Json(transactions)),
         Err(e) => {
             match e {

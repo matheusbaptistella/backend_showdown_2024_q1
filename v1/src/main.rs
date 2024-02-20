@@ -9,10 +9,11 @@ use sqlx::PgPool;
 mod api;
 mod db;
 
+// Build the web service router.
 pub fn router(pool: PgPool) -> Router {
     Router::new()
         .nest_service("/cliente/:id/transacoes", post(api::add_transaction))
-        .nest_service("/cliente/:id/extrato", get(api::get_balance))
+        .nest_service("/cliente/:id/extrato", get(api::get_bank_statement))
         // Add the connection pool as a "layer", available for dependency injection.
         .layer(Extension(pool))
 }
@@ -20,7 +21,7 @@ pub fn router(pool: PgPool) -> Router {
 #[tokio::main]
 async fn main() -> Result<()> {
     // Load environment variables from .env
-    dotenv::dotenv().ok(); // Initialise the Postgres database
+    dotenv::dotenv().ok();
 
     // Initialise the Postgres database
     let connection_pool = db::init_db().await?;
