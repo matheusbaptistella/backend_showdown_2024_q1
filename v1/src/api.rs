@@ -14,7 +14,8 @@ use sqlx::PgPool;
 /// * `Json(txn)` - the transaction, parsed by Axum from the json body.
 ///
 /// ## Returns
-/// * 
+/// * A status code depending on whether the insertion was successful or not,
+/// and, in the case of an error, a status code related to it.
 pub async fn add_transaction(
     Extension(cnn): Extension<PgPool>,
     Path(id): Path<i32>,
@@ -24,15 +25,18 @@ pub async fn add_transaction(
         Ok(()) => Ok(StatusCode::OK),
         Err(e) => {
             match e {
-                // Client id not found
+                // Client id not found (404)
                 sqlx::Error::RowNotFound => Err(StatusCode::NOT_FOUND),
-                // Balance limit exceeded
-                sqlx::Error::Database(db_err) => match db_err.constraint() {
-                    Some(constraint) if constraint == "balance_exceeded" => {
-                        Err(StatusCode::UNPROCESSABLE_ENTITY)
-                    }
-                    _ => Err(StatusCode::INTERNAL_SERVER_ERROR),
-                },
+                // Any database error related to violating the limit_exceeded contraint, a transaction value that is not
+                // an integer, or a transaction type/description that is not supported are all treated as
+                // UNPROCESSABLE_ENTITY (422)
+                sqlx::Error::Database(db_err) => Err(StatusCode::UNPROCESSABLE_ENTITY),
+                // sqlx::Error::Database(db_err) => match db_err.constraint() {
+                //     Some(constraint) if constraint == "limit_exceeded" => {
+                //         Err(StatusCode::UNPROCESSABLE_ENTITY)
+                //     }
+                //     _ => Err(StatusCode::INTERNAL_SERVER_ERROR),
+                // },
                 _ => Err(StatusCode::INTERNAL_SERVER_ERROR),
             }
         }

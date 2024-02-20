@@ -1,8 +1,7 @@
 use anyhow::Result;
 use axum::{
     routing::{get, post},
-    Extension,
-    Router,
+    Extension, Router,
 };
 use sqlx::PgPool;
 
