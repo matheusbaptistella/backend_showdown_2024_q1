@@ -13,7 +13,7 @@ pub fn router(pool: PgPool) -> Router {
     Router::new()
         .nest_service("/cliente/:id/transacoes", post(api::add_transaction))
         .nest_service("/cliente/:id/extrato", get(api::get_bank_statement))
-        // Add the connection pool as a "layer", available for dependency injection.
+        // Add the connection pool as a "layer", available for dependency injection
         .layer(Extension(pool))
 }
 
