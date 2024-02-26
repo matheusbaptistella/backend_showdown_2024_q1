@@ -8,11 +8,12 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.79"
 axum = "0.7.4"
-#chrono = "0.4.34"
 dotenv = "0.15.0"
 serde = { version = "1.0.196", features = ["derive"] }
 serde_json = "1.0.114"
-sqlx = { version = "0.7.3", features = ["runtime-tokio", "postgres"]}
+sqlx = { version = "0.7.3", features = ["runtime-tokio", "postgres", "migrate"]}
 tokio = { version = "1.36.0", features = ["full"] }
 
+
 [dev-dependencies]
+axum-test = "14.3.0"
