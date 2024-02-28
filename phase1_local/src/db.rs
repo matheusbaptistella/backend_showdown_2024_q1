@@ -63,7 +63,7 @@ pub async fn init_db() -> anyhow::Result<PgPool> {
 /// * `id` - the id of the client to reference the transaction.
 ///
 /// ## Returns
-/// * A tuple containing the total_limit of the client and their updated balance.
+/// * The client's limit and updated balance information.
 pub async fn add_transaction(
     pool: &PgPool,
     core_txn: &CoreTransaction,

@@ -1,4 +1,3 @@
-use anyhow::Result;
 use axum::{
     routing::{get, post},
     Extension, Router,
@@ -18,7 +17,7 @@ pub fn router(pool: PgPool) -> Router {
 }
 
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() -> anyhow::Result<()> {
     // Load environment variables from .env
     dotenv::dotenv().ok();
     // Initialise the Postgres database
