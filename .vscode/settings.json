@@ -1,6 +1,0 @@
-{
-    "rust-analyzer.linkedProjects": [
-        "./phase1_local/Cargo.toml"
-    ],
-    "rust-analyzer.showUnlinkedFileNotification": false
-}
