@@ -18,13 +18,11 @@ pub fn router(pool: PgPool) -> Router {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    // Load environment variables from .env
-    dotenv::dotenv().ok();
-    // Initialise the Postgres database
+    // Initialize the Postgres database
     let connection_pool = db::init_db().await?;
     let app = router(connection_pool);
     // Start server
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:3000").await?; // Talvez trocar para socket addr (?)
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await?; // Talvez trocar para socket addr (?)
     axum::serve(listener, app).await?;
 
     Ok(())

@@ -50,7 +50,7 @@ pub async fn init_db() -> anyhow::Result<PgPool> {
     let database_url = std::env::var("DATABASE_URL")?;
     let connection_pool = PgPool::connect(&database_url).await?;
     // Initialize the database
-    sqlx::migrate!("./migrations").run(&connection_pool).await?;
+    //sqlx::migrate!().run(&connection_pool).await?;
 
     Ok(connection_pool)
 }
