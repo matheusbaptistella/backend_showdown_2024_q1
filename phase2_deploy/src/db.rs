@@ -1,18 +1,19 @@
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, PgPool};
 
 /// Represents a transaction.
-#[derive(Debug, Serialize, Deserialize, PartialEq, FromRow, Clone)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, FromRow)]
 pub struct Transaction {
     pub valor: i32,
     pub tipo: String,
     pub descricao: String,
-    pub realizada_em: String,
+    pub realizada_em: DateTime<Utc>,
 }
 
 /// Represents only the information that should be provided via json to write a
 /// Transaction on the database.
-#[derive(Debug, Serialize, Deserialize, Clone)] //  remover debug e clone
+#[derive(Serialize, Deserialize)]
 pub struct CoreTransaction {
     pub valor: i32,
     pub tipo: String,
@@ -20,28 +21,28 @@ pub struct CoreTransaction {
 }
 
 /// Information associated to a client.
-#[derive(Debug, Serialize, Deserialize, PartialEq, FromRow, Clone)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, FromRow)]
 pub struct ClientInfo {
     pub limite: i32,
     pub saldo: i32,
 }
 
 /// Information related to a client's account.
-#[derive(Debug, Serialize, Deserialize, PartialEq, FromRow, Clone)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, FromRow)]
 pub struct AccountSummaryInfo {
     pub total: i32,
-    pub data_extrato: String,
+    pub data_extrato: DateTime<Utc>,
     pub limite: i32,
 }
 
 /// Information about the client's balance and latest transactions.
-#[derive(Debug, Serialize, PartialEq, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct AccountSummary {
     pub saldo: AccountSummaryInfo,
     pub ultimas_transacoes: Vec<Transaction>,
 }
 
-/// Create a database connection pool. Run any migrations.
+/// Create a database connection pool.
 ///
 /// ## Returns
 /// * A connection pool.
@@ -49,8 +50,6 @@ pub async fn init_db() -> anyhow::Result<PgPool> {
     // Create the connection pool
     let database_url = std::env::var("DATABASE_URL")?;
     let connection_pool = PgPool::connect(&database_url).await?;
-    // Initialize the database
-    //sqlx::migrate!().run(&connection_pool).await?;
 
     Ok(connection_pool)
 }
@@ -109,9 +108,9 @@ pub async fn add_transaction(
 /// ## Returns
 /// * The client's account summary .
 pub async fn get_account_summary(pool: &PgPool, id: i32) -> Result<AccountSummary, sqlx::Error> {
-    // Fazer join pra ficar mais eficiente (talvez armazenar ao contrario?)
+    // Fazer join pra ficar mais eficiente (talvez armazenar ao contrario?) tentar tudo numa query só?
     let bsinfo = sqlx::query_as::<_, AccountSummaryInfo>(
-        r#"SELECT saldo AS total, TO_CHAR(CURRENT_TIMESTAMP, 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS data_extrato, limite
+        r#"SELECT saldo AS total, CURRENT_TIMESTAMP AS data_extrato, limite
         FROM clientes
         WHERE id = $1"#
     )
@@ -120,7 +119,7 @@ pub async fn get_account_summary(pool: &PgPool, id: i32) -> Result<AccountSummar
     .await?;
 
     let transactions = sqlx::query_as::<_, Transaction>(
-        r#"SELECT valor, tipo, descricao, TO_CHAR(realizada_em, 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS realizada_em
+        r#"SELECT valor, tipo, descricao, realizada_em
         FROM transacoes
         WHERE id = $1
         ORDER BY realizada_em DESC

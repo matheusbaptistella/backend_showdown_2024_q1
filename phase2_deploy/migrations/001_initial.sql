@@ -13,7 +13,7 @@ CREATE TABLE transacoes (
     valor INTEGER NOT NULL,
     tipo VARCHAR(1) NOT NULL,
     descricao VARCHAR(10),
-    realizada_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    realizada_em TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 INSERT INTO clientes (limite) 

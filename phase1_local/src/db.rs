@@ -12,7 +12,7 @@ pub struct Transaction {
 
 /// Represents only the information that should be provided via json to write a
 /// Transaction on the database.
-#[derive(Debug, Serialize, Deserialize, Clone)] //  remover debug e clone
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CoreTransaction {
     pub valor: i32,
     pub tipo: String,
@@ -109,7 +109,6 @@ pub async fn add_transaction(
 /// ## Returns
 /// * The client's account summary .
 pub async fn get_account_summary(pool: &PgPool, id: i32) -> Result<AccountSummary, sqlx::Error> {
-    // Fazer join pra ficar mais eficiente (talvez armazenar ao contrario?)
     let bsinfo = sqlx::query_as::<_, AccountSummaryInfo>(
         r#"SELECT saldo AS total, TO_CHAR(CURRENT_TIMESTAMP, 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS data_extrato, limite
         FROM clientes
