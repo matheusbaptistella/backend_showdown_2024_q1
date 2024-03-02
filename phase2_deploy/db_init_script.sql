@@ -10,8 +10,8 @@ CREATE TABLE clientes (
 -- Multiple entries for each client.
 CREATE TABLE transacoes (
     id INTEGER REFERENCES clientes(id),
-    valor INTEGER NOT NULL CHECK (valor > 0), -- Tem que ser positivo (fazer o check)
-    tipo VARCHAR(1) NOT NULL CHECK (tipo = 'd' OR tipo = 'c'), -- Com ctz seria mais rapido fazer em codigo
+    valor INTEGER NOT NULL,
+    tipo VARCHAR(1) NOT NULL,
     descricao VARCHAR(10),
     realizada_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
