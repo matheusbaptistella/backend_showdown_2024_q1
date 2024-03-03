@@ -6,6 +6,7 @@ use sqlx::PgPool;
 
 mod api;
 mod db;
+mod model;
 
 // Build the web service router.
 pub fn router(pool: PgPool) -> Router {

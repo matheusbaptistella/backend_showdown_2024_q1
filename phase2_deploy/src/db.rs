@@ -1,46 +1,5 @@
-use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
-use sqlx::{FromRow, PgPool};
-
-/// Represents a transaction.
-#[derive(Debug, Serialize, Deserialize, PartialEq, FromRow)]
-pub struct Transaction {
-    pub valor: i32,
-    pub tipo: String,
-    pub descricao: String,
-    pub realizada_em: DateTime<Utc>,
-}
-
-/// Represents only the information that should be provided via json to write a
-/// Transaction on the database.
-#[derive(Serialize, Deserialize)]
-pub struct CoreTransaction {
-    pub valor: i32,
-    pub tipo: String,
-    pub descricao: String,
-}
-
-/// Information associated to a client.
-#[derive(Debug, Serialize, Deserialize, PartialEq, FromRow)]
-pub struct ClientInfo {
-    pub limite: i32,
-    pub saldo: i32,
-}
-
-/// Information related to a client's account.
-#[derive(Debug, Serialize, Deserialize, PartialEq, FromRow)]
-pub struct AccountSummaryInfo {
-    pub total: i32,
-    pub data_extrato: DateTime<Utc>,
-    pub limite: i32,
-}
-
-/// Information about the client's balance and latest transactions.
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
-pub struct AccountSummary {
-    pub saldo: AccountSummaryInfo,
-    pub ultimas_transacoes: Vec<Transaction>,
-}
+use crate::model::{AccountSummary, AccountSummaryInfo, ClientInfo, CoreTransaction, Transaction};
+use sqlx::PgPool;
 
 /// Create a database connection pool.
 ///
@@ -72,15 +31,28 @@ pub async fn add_transaction(
 
     // If the txn_value would exceed the balance limit (a constraint in the db), the transaction is cancelled before
     // insertion happens. Otherwise, updates the clients balance.
-    let resp = sqlx::query_as::<_, ClientInfo>(
-        "UPDATE clientes SET saldo = saldo - $1
-        WHERE id = $2
-        RETURNING limite, saldo",
-    )
-    .bind(core_txn.valor)
-    .bind(id)
-    .fetch_one(pool)
-    .await?;
+    let resp: ClientInfo;
+    if core_txn.tipo == "c" {
+        resp = sqlx::query_as::<_, ClientInfo>(
+            "UPDATE clientes SET saldo = saldo + $1
+            WHERE id = $2
+            RETURNING limite, saldo",
+        )
+        .bind(core_txn.valor)
+        .bind(id)
+        .fetch_one(pool)
+        .await?;
+    } else {
+        resp = sqlx::query_as::<_, ClientInfo>(
+            "UPDATE clientes SET saldo = saldo - $1
+            WHERE id = $2
+            RETURNING limite, saldo",
+        )
+        .bind(core_txn.valor)
+        .bind(id)
+        .fetch_one(pool)
+        .await?;
+    }
 
     sqlx::query(
         "INSERT INTO transacoes(id, valor, tipo, descricao)
@@ -112,7 +84,7 @@ pub async fn get_account_summary(pool: &PgPool, id: i32) -> Result<AccountSummar
     let bsinfo = sqlx::query_as::<_, AccountSummaryInfo>(
         r#"SELECT saldo AS total, CURRENT_TIMESTAMP AS data_extrato, limite
         FROM clientes
-        WHERE id = $1"#
+        WHERE id = $1"#,
     )
     .bind(id)
     .fetch_one(pool)

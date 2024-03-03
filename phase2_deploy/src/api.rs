@@ -1,4 +1,4 @@
-use crate::db::{AccountSummary, ClientInfo, CoreTransaction};
+use crate::model::{AccountSummary, ClientInfo, CoreTransaction};
 use axum::{
     extract::{Json, Path},
     http::StatusCode,
