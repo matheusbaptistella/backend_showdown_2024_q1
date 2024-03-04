@@ -10,6 +10,10 @@ pub async fn init_db() -> anyhow::Result<PgPool> {
     let database_url = std::env::var("DATABASE_URL")?;
     let connection_pool = PgPool::connect(&database_url).await?;
 
+    // Initialize the database for local tests
+    #[cfg(debug_assertions)]
+    sqlx::migrate!("./migrations").run(&connection_pool).await?;
+
     Ok(connection_pool)
 }
 
@@ -82,20 +86,20 @@ pub async fn add_transaction(
 pub async fn get_account_summary(pool: &PgPool, id: i32) -> Result<AccountSummary, sqlx::Error> {
     // Fazer join pra ficar mais eficiente (talvez armazenar ao contrario?) tentar tudo numa query só?
     let bsinfo = sqlx::query_as::<_, AccountSummaryInfo>(
-        r#"SELECT saldo AS total, CURRENT_TIMESTAMP AS data_extrato, limite
+        "SELECT saldo AS total, CURRENT_TIMESTAMP AS data_extrato, limite
         FROM clientes
-        WHERE id = $1"#,
+        WHERE id = $1",
     )
     .bind(id)
     .fetch_one(pool)
     .await?;
 
     let transactions = sqlx::query_as::<_, Transaction>(
-        r#"SELECT valor, tipo, descricao, realizada_em
+        "SELECT valor, tipo, descricao, realizada_em
         FROM transacoes
         WHERE id = $1
         ORDER BY realizada_em DESC
-        LIMIT 10"#,
+        LIMIT 10",
     )
     .bind(id)
     .fetch_all(pool)

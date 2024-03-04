@@ -38,4 +38,8 @@ And then, to start the server:
 cargo run
 ```
 
-After that, we can use Postman to make the HTTP requests and check the response!
+After that, we can use Postman to make the HTTP requests and check the response:
+
+![alt text](../images/postman_result.png)
+
+Next, we will check how to deploy this code.
