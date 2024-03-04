@@ -1,9 +1,13 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use sqlx::FromRow;
+use sqlx::{FromRow, PgPool};
+use std::sync::Arc;
+use tokio::sync::Mutex;
+
+pub type DbPool = Arc<Mutex<PgPool>>;
 
 /// Represents a transaction.
-#[derive(Debug, Serialize, Deserialize, PartialEq, FromRow)]
+#[derive(Debug, Serialize, PartialEq, FromRow)]
 pub struct Transaction {
     pub valor: i32,
     pub tipo: String,
@@ -21,14 +25,14 @@ pub struct CoreTransaction {
 }
 
 /// Information associated to a client.
-#[derive(Debug, Serialize, Deserialize, PartialEq, FromRow)]
+#[derive(Debug, Serialize, PartialEq, FromRow)]
 pub struct ClientInfo {
     pub limite: i32,
     pub saldo: i32,
 }
 
 /// Information related to a client's account.
-#[derive(Debug, Serialize, Deserialize, PartialEq, FromRow)]
+#[derive(Debug, Serialize, PartialEq, FromRow)]
 pub struct AccountSummaryInfo {
     pub total: i32,
     pub data_extrato: DateTime<Utc>,
@@ -36,7 +40,7 @@ pub struct AccountSummaryInfo {
 }
 
 /// Information about the client's balance and latest transactions.
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Serialize, PartialEq)]
 pub struct AccountSummary {
     pub saldo: AccountSummaryInfo,
     pub ultimas_transacoes: Vec<Transaction>,
