@@ -1,10 +1,8 @@
-use crate::db::{AccountSummary, ClientInfo, CoreTransaction};
+use crate::model::{AccountSummary, ClientInfo, CoreTransaction, DbPool};
 use axum::{
-    extract::{Json, Path},
+    extract::{Json, Path, State},
     http::StatusCode,
-    Extension,
 };
-use sqlx::PgPool;
 
 /// Add a transaction to the database and update the client's limit/balance.
 ///
@@ -18,7 +16,7 @@ use sqlx::PgPool;
 /// client's limit and updated balance. In the case of an error, a status code
 /// related to it.
 pub async fn add_transaction(
-    Extension(cnn): Extension<PgPool>,
+    State(cnn): State<DbPool>,
     Path(id): Path<i32>,
     Json(core_txn): Json<CoreTransaction>,
 ) -> Result<Json<ClientInfo>, StatusCode> {
@@ -28,7 +26,9 @@ pub async fn add_transaction(
     {
         return Err(StatusCode::UNPROCESSABLE_ENTITY);
     }
-    match crate::db::add_transaction(&cnn, &core_txn, id).await {
+
+    let pool = cnn.lock().await;
+    match crate::db::add_transaction(&pool, &core_txn, id).await {
         Ok(resp_transaction) => Ok(Json(resp_transaction)),
         Err(e) => {
             match e {
@@ -54,10 +54,11 @@ pub async fn add_transaction(
 /// about the client's balance and its latest 10 transactions. In the case of an
 /// error, a status code related to it.
 pub async fn get_account_summary(
-    Extension(cnn): Extension<PgPool>,
+    State(cnn): State<DbPool>,
     Path(id): Path<i32>,
 ) -> Result<Json<AccountSummary>, StatusCode> {
-    match crate::db::get_account_summary(&cnn, id).await {
+    let pool = cnn.lock().await;
+    match crate::db::get_account_summary(&pool, id).await {
         Ok(account_s) => Ok(Json(account_s)),
         Err(e) => {
             match e {
@@ -75,10 +76,14 @@ mod test {
     use super::*;
     use axum_test::TestServer;
     use serde_json::json;
+    use sqlx::PgPool;
+    use std::sync::Arc;
+    use tokio::sync::Mutex;
 
     #[sqlx::test(migrations = "./migrations")]
     async fn add_transaction_valid_id(pool: PgPool) {
-        let app = crate::router(pool);
+        let app_state = Arc::new(Mutex::new(pool));
+        let app = crate::router(app_state);
         let server = TestServer::new(app).unwrap();
         let r = server
             .post(&"/clientes/1/transacoes")
@@ -98,7 +103,8 @@ mod test {
 
     #[sqlx::test(migrations = "./migrations")]
     async fn add_transaction_invalid_id(pool: PgPool) {
-        let app = crate::router(pool);
+        let app_state = Arc::new(Mutex::new(pool));
+        let app = crate::router(app_state);
         let server = TestServer::new(app).unwrap();
         let r = server
             .post(&"/clientes/6/transacoes")
@@ -114,7 +120,8 @@ mod test {
 
     #[sqlx::test(migrations = "./migrations")]
     async fn add_transaction_balance_exceeded(pool: PgPool) {
-        let app = crate::router(pool);
+        let app_state = Arc::new(Mutex::new(pool));
+        let app = crate::router(app_state);
         let server = TestServer::new(app).unwrap();
         let r = server
             .post(&"/clientes/1/transacoes")
@@ -130,7 +137,8 @@ mod test {
 
     #[sqlx::test(migrations = "./migrations")]
     async fn add_transaction_invalid_json_field(pool: PgPool) {
-        let app = crate::router(pool);
+        let app_state = Arc::new(Mutex::new(pool));
+        let app = crate::router(app_state);
         let server = TestServer::new(app).unwrap();
         let r = server
             .post(&"/clientes/1/transacoes")
@@ -146,7 +154,8 @@ mod test {
 
     #[sqlx::test(migrations = "./migrations")]
     async fn get_account_summary_empty_valid_id(pool: PgPool) {
-        let app = crate::router(pool);
+        let app_state = Arc::new(Mutex::new(pool));
+        let app = crate::router(app_state);
         let server = TestServer::new(app).unwrap();
         let r = server.get(&"/clientes/2/extrato").await;
         let data_extrato = r.json::<serde_json::Value>()["saldo"]["data_extrato"].clone();
@@ -163,7 +172,8 @@ mod test {
 
     #[sqlx::test(migrations = "./migrations")]
     async fn get_account_summary_single_valid_id(pool: PgPool) {
-        let app = crate::router(pool);
+        let app_state = Arc::new(Mutex::new(pool));
+        let app = crate::router(app_state);
         let server = TestServer::new(app).unwrap();
         let _ = server
             .post(&"/clientes/2/transacoes")
@@ -197,7 +207,8 @@ mod test {
 
     #[sqlx::test(migrations = "./migrations")]
     async fn get_account_summary_invalid_id(pool: PgPool) {
-        let app = crate::router(pool);
+        let app_state = Arc::new(Mutex::new(pool));
+        let app = crate::router(app_state);
         let server = TestServer::new(app).unwrap();
         let r = server.get(&"/clientes/6/extrato").await;
 
