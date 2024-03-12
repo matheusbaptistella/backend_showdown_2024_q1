@@ -1,13 +1,8 @@
 # phase3_optimizations
+The following image displays the results before doing the optimizations:
 
 ![alt text](../images/to_improve.png)
 
-1 - mudar para 512 worker connections: -> Melhorou
+Initially, I tried changing some of the values on the docker compose file, but it just made the performance worse. The unique relevant changes were that I added the `opt-level = 3` to the release profile and the `"http2"` to axum, in the `Cargo.toml` file. The results:
 
-2 - diminuir os resources do nginx e alocar no bd -> Nao
-
-3 - diminuir os recursos das apis e colocar no bd -> Nao
-
-4 - diminuir cpu do bd e colocar nas apis -> Nao
-
-5 - Tentar mudar o sistema de lock nas apis ->
+[alt text](../images/final_run.png)
