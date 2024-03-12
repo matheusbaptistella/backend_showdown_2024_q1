@@ -40,6 +40,6 @@ cargo run
 
 After that, we can use Postman to make the HTTP requests and check the response:
 
-![alt text](../images/postman_result.png)
+![alt text](../images/local_result.png)
 
 Next, we will check how to deploy this code.
